@@ -1,0 +1,205 @@
+function [ C, sigma, W_ _output ] = SOFNN( X, d, Kd )
+
+%SOFNN Self-Organizing Fuzzy Neural Networks
+
+%Input Parameters
+
+% X(r,n) - rth traning data from nth observation
+
+% d(n) - the desired output of the network (must be a row vector)
+
+% Kd(r) - predefined distance threshold for the rth input
+
+%Output Parameters
+
+% c(IndexInputVariable,IndexNeuron)
+
+% sigma(IndexInputVariable,IndexNeuron)
+
+% W_ _output is a vector
+
+%Setting up Parameters for SOFNN
+
+SigmaZero=4;
+
+delta=0.12;
+ 
+threshold=0.1354;
+
+k_ sigma=1.12;
+
+%For more accurate results uncomment the following
+
+%format long;
+
+%Implementation of a SOFNN model
+
+[size_ R,size_ N]=size(X);
+
+%size_ R - the number of input variables
+
+c=[];
+
+sigma=[];
+
+W_ _output=[];
+
+u=0;
+% the number of neurons in the structure
+
+Q=[];
+Q=[];
+
+Psi=[]; 
+
+for n=1:size_ N
+
+x=X(;,n); ;
+if u==0 % No neuron in the structure?
+C=X;
+sigma=SigmaZero*ones(size_ R,1);
+u=1;
+Psi=GetMePsi(X,c,sigma);
+[Q,0] = UpdateStructure(X,Psi,d);
+pT_ n=GetMeGreatPsi(x,Psi(n;));
+else
+[Q,0,pT_ n] = UpdateStructureRecursively(X,Psi,Q,O,d,n);
+end;
+
+KeepSpinning=true;
+while KeepSpinning
+%Calculate the error and if-part criteria
+ae=abs(d(n)-pT_ n*O); %approximation error
+[phi,~' ]=GetMePhi(x,c,sigma);
+[maxphi,maxindex]=max(phi); % maxindex refers to the neuron's index
+if ae>delta
+if maxphi<threshold
+%enlarge width
+[minsigma,minindex]=min(sigma(;maxindex));
+sigma(minindex,maxindex)=k_ sigma*minsigma;
+Psi=GetMePsi(X,c,sigma);
+[Q,0] = UpdateStructure(X,Psi,d);
+pT_ n=GetMeGreatPsi(x,Psi(n,;))';
+else 
+%Add a new neuron and update structure
+ctemp=[];
+sigmatemp=[];
+dist=0;
+for r=1:size_ R
+dist=abs(x()-(,1));
+distIndex=1; .
+for j=2:u
+if abs(x(r)-c(rj))<dist
+distIndex=j;
+dist=abs(r)-(,j));
+end;
+end;
+
+c=[c ctemp];
+sigma=[sigma sigmatemp];
+Psi=GetMePsi(X,c,sigma);
+[Q,0] = UpdateStructure(X,Psi,d);
+KeepSpinning=false;
+u=u+1;
+end;
+
+else
+if maxphi<threshold
+%enlarge width
+[minsigma,minindex]=min(sigma(;maxindex));
+sigma(minindex,maxindex)=k_ sigma* minsigma;
+Psi=GetMePsi(X,c,sigma);
+[Q,0] = UpdateStructure(X,Psi,d);
+pT_ n=GetMeGreatPsi(x,Psi(n,;))';
+else
+%Do nothing and exit the while
+KeepSpinning=false;
+end;
+end;
+end;
+end;
+W_ _output=0;
+end
+function [Q _next, 0_ nextpT. _n] = UpdateStructureRecursively(X,Psi,Q,O,d,n)
+%O=O(t-1) O_ next=0(t)
+p_ n=GetMeGreatPsi(:,n),Psi(n;));
+pT_ n=p_ _n';
+ee=abs(d(n)-pT_ n*0); %|e(t)|
+temp=1+pT_ n*Q*p_ _n; 
+ae=abs(ee/temp);
+if ee>=ae
+L=Q*p_ n*(temp)^(-1);
+Q next=(eye(length())L*pT_ n)*Q;
+O_ next=O + L*ee; 
+else
+Q next=eye(length(Q))*Q;
+O_ next=O;
+end;
+end
+function [Q, 0 ]= UpdateStructure(X,Psi,d)
+GreatPsiBig = GetMeGreatPsi(X,Psi);
+%M=u*(r+1)
+%n - the number of observations
+[M,~]=size(GreatPsiBig);
+%Others Ways of getting Q=[P^T(t)*P(t)]^-1
+%opts.SYM = true;
+%Q = linsolve(GreatPsiBig*GreatPsiBig',eye(M),opts); .
+%
+%Q = inv(GreatPsiBig*GreatPsiBig');
+%Q = pinv(GreatPsiBig*GreatPsiBig');
+Y=GreatPsiBig\eye(M);
+Q=GreatPsig"\Y;
+0=Q*GreatPsiBig*d'; 
+end
+%This function works too with x
+% (X=X and Psi is a Matrix) - Gets you the whole GreatPsi
+% (X=x and Psi is the row related to x) - Gets you just the column related with the
+observation
+function [GreatPsi] = GetMeGreatPsi(X,Psi)
+%Psi- In a row you go through the neurons and in a column you go through number of
+%observations **** Psi( #obs,IndexNeuron) ****
+GreatPsi=[];
+[N,U]=size(Psi);
+for n=1:N
+x=X(:,n);
+GreatPsiCol=[]; 
+for u=1:U
+GreatPsiCol=[ GreatPsiCol ; Psi(n,u)*[1; x] ];
+end;
+GreatPsi=[GreatPsi GreatPsiCol];
+end;
+function [phi, SumPhi]=GetMePhi(x,c,sigma)
+[r,u]=size(c);
+%u - the number of neurons in the structure
+%r - the number of input variables
+phi=[];
+SumPhi=0;
+for j=1:u % moving through the neurons
+S=0;
+for i=1:r % moving through the input variables
+S=S + ((x(i) - (j))^2)/ (2*sigma(,j)^2); 
+end;
+phi = [phi exp(-S)];
+SumPhi = SumPhi + phi(j); %phi(u)=exp(-S)
+end; 
+end
+%This function works too with x, it will give you the row related to x
+function [Psi] = GetMePsi(X,c,sigma)
+[~,u]=size(c);
+[~,size_ N]=size(X);
+%u - the number of neurons in the structure
+%size_ N - the number of observations
+Psi=[];
+for n=1:size_ N
+[phi, SumPhi]=GetMePhi(X(:,n),c,sigma); .
+PsiTemp=[];
+for j=1:u
+%PsiTemp is a row vector ex: [1 2 3]
+PsiTemp(j)=phi(j)/SumPhi;
+end;
+Psi=[Psi; PsiTemp];
+%Psi - In a row you go through the neurons and in a column you go through number of
+%observations **** Psi( # obs,IndexNeuron)****
+
+end;
+end
